@@ -1,7 +1,7 @@
 use rand::Rng;
 use rayon::prelude::*;
 
-const NUMBERS_PER_ITERATION: usize = 1000;
+const NUMBERS_PER_ITERATION: usize = 100_000;
 
 fn main() {
     let mut start = std::time::Instant::now();
@@ -13,27 +13,33 @@ fn main() {
             numbers.push(rng.gen::<u128>());
         }
 
-        let result = numbers.par_iter().map(|number| {
-            let mut number = *number;
-            while number > 1 {
-                if number & 1 == 0 {
-                    number >>= 1;
-                } else {
-                    number = 3 * number + 1;
+        let total_steps = numbers
+            .par_iter()
+            .map(|number| {
+                let mut steps = 0usize;
+                let mut number = *number;
+                while number > 1 {
+                    if number & 1 == 0 {
+                        number >>= 1;
+                    } else {
+                        number = 3 * number + 1;
+                    }
+
+                    steps += 1;
                 }
-            }
 
-            number
-        }).sum::<u128>();
-
-        if result != NUMBERS_PER_ITERATION as u128 {
-            unreachable!()
-        }
+                steps
+            })
+            .sum::<usize>();
 
         count += NUMBERS_PER_ITERATION;
 
         if start.elapsed().as_millis() >= 1_000 {
-            println!("~{} numbers/second", count);
+            println!(
+                "~{} numbers/second, {} steps on average",
+                count,
+                total_steps as f32 / NUMBERS_PER_ITERATION as f32
+            );
             start = std::time::Instant::now();
             count = 0;
         }
